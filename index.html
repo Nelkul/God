@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Genesis - Divine Interface</title>
     <style>
-        /* On utilise dvh (Dynamic Viewport Height) pour éviter le bug de la barre mobile */
         body { 
             margin: 0; background: #000; color: white; 
             font-family: 'Times New Roman', serif; overflow: hidden; 
@@ -14,36 +13,41 @@
         }
         
         #eye-container { 
-            flex: 0 0 40%; display: flex; align-items: center; justify-content: center; 
+            flex: 0 0 35%; display: flex; align-items: center; justify-content: center; 
         }
 
         #eye-img { 
-            width: 150px; /* Œil bien rétréci comme demandé */
+            width: 140px; 
             height: auto;
             image-rendering: pixelated;
         }
 
         #chat-wrapper {
             flex: 1; position: relative; overflow: hidden;
-            /* Masque pour l'effet de fondu du texte */
-            mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
-            -webkit-mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+            /* Le dégradé reste, mais on va gérer le padding du contenu */
+            mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
         }
 
         #chat-box { 
-            height: 100%; padding: 0 30px; text-align: center; 
-            font-style: italic; font-size: 1.1em; overflow-y: auto; 
-            display: flex; align-items: center; justify-content: center;
-            scrollbar-width: none; white-space: pre-wrap;
+            height: 100%; 
+            /* On ajoute du padding vertical pour que le texte ne soit jamais sous le masque au repos */
+            padding: 60px 30px; 
+            box-sizing: border-box;
+            text-align: center; 
+            font-style: italic; font-size: 1.1em; 
+            overflow-y: auto; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            scrollbar-width: none; 
+            white-space: pre-wrap;
         }
+        #chat-box::-webkit-scrollbar { display: none; }
 
         #input-area { 
             padding: 20px; 
-            padding-bottom: calc(20px + env(safe-area-inset-bottom)); /* Sécurité pour iPhone/Android */
-            background: #000; 
-            border-top: 1px solid #1a1a1a; 
-            display: flex; gap: 10px; 
-            opacity: 0; transition: opacity 1s;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            background: #000; border-top: 1px solid #1a1a1a; 
+            display: flex; gap: 10px; opacity: 0; transition: opacity 1s;
         }
         
         input { 
@@ -51,10 +55,7 @@
             padding: 12px 20px; border-radius: 25px; outline: none; font-size: 16px;
         }
 
-        button { 
-            background: #fff; border: none; border-radius: 50%; 
-            width: 45px; height: 45px; cursor: pointer; color: #000;
-        }
+        button { background: #fff; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; color: #000; font-size: 1.2em; }
     </style>
 </head>
 <body onload="init()">
@@ -83,17 +84,24 @@
             eye.src = `assets/${path}${timestamp}`;
         }
 
+        function getGreeting() {
+            const hour = new Date().getHours();
+            const welcome = (hour >= 18 || hour < 5) ? "Bonsoir" : "Bonjour";
+            return `${welcome}, mon enfant.`;
+        }
+
         function init() {
             if (!API_KEY) {
                 let key = prompt("Clé Groq :");
                 if (key) { localStorage.setItem("genesis_key", key); location.reload(); }
                 return;
             }
-            // Phase d'éveil
+            
             setEye("awake.gif", true);
+            
             setTimeout(() => {
                 setEye("still.png");
-                chatBox.innerText = "Je t'écoute...";
+                chatBox.innerText = getGreeting();
                 inputArea.style.opacity = "1";
             }, 1000); 
         }
@@ -105,6 +113,7 @@
 
             input.value = "";
             chatBox.innerText = ". . .";
+            chatBox.scrollTop = 0; // Reset scroll pour le nouveau message
 
             try {
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -135,7 +144,6 @@
 
                 chatBox.innerText = cleanText;
 
-                // Retour au neutre automatique
                 setTimeout(() => {
                     if (emotion === "sad") {
                         setEye("sad/to_still.gif", true);
