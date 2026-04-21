@@ -2,61 +2,58 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Genesis - Divine Interface</title>
     <style>
+        /* On utilise dvh (Dynamic Viewport Height) pour éviter le bug de la barre mobile */
         body { 
             margin: 0; background: #000; color: white; 
             font-family: 'Times New Roman', serif; overflow: hidden; 
-            display: flex; flex-direction: column; height: 100vh; 
+            display: flex; flex-direction: column; 
+            height: 100vh; height: 100dvh; 
         }
         
         #eye-container { 
-            /* On réduit un peu l'espace alloué à l'œil */
-            flex: 0 0 35vh; display: flex; align-items: center; justify-content: center; 
+            flex: 0 0 40%; display: flex; align-items: center; justify-content: center; 
         }
 
         #eye-img { 
-            /* ŒIL RÉTRÉCI ICI */
-            width: 180px; 
+            width: 150px; /* Œil bien rétréci comme demandé */
             height: auto;
             image-rendering: pixelated;
         }
 
         #chat-wrapper {
             flex: 1; position: relative; overflow: hidden;
-            mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
-            -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+            /* Masque pour l'effet de fondu du texte */
+            mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
         }
 
         #chat-box { 
-            height: 100%; padding: 0 40px; text-align: center; 
+            height: 100%; padding: 0 30px; text-align: center; 
             font-style: italic; font-size: 1.1em; overflow-y: auto; 
             display: flex; align-items: center; justify-content: center;
             scrollbar-width: none; white-space: pre-wrap;
-            line-height: 1.5;
         }
 
         #input-area { 
-            padding: 15px; /* Réduit pour remonter la barre */
+            padding: 20px; 
+            padding-bottom: calc(20px + env(safe-area-inset-bottom)); /* Sécurité pour iPhone/Android */
             background: #000; 
-            border-top: 1px solid #111; 
-            display: flex; 
-            gap: 10px; 
-            opacity: 0; 
-            transition: opacity 1s;
-            /* On s'assure qu'il n'y a pas de marge qui pousse vers le bas */
-            margin-bottom: 0; 
+            border-top: 1px solid #1a1a1a; 
+            display: flex; gap: 10px; 
+            opacity: 0; transition: opacity 1s;
         }
         
         input { 
-            flex: 1; background: #0a0a0a; border: 1px solid #222; color: white; 
-            padding: 10px 18px; border-radius: 25px; outline: none; font-size: 16px;
+            flex: 1; background: #111; border: 1px solid #333; color: white; 
+            padding: 12px 20px; border-radius: 25px; outline: none; font-size: 16px;
         }
 
         button { 
             background: #fff; border: none; border-radius: 50%; 
-            width: 40px; height: 40px; cursor: pointer; 
+            width: 45px; height: 45px; cursor: pointer; color: #000;
         }
     </style>
 </head>
@@ -71,7 +68,7 @@
     </div>
 
     <form id="input-area" onsubmit="event.preventDefault(); sendMessage();">
-        <input type="text" id="user-input" placeholder="Parle à l'entité..." autocomplete="off">
+        <input type="text" id="user-input" placeholder="Parle à Genesis..." autocomplete="off">
         <button type="submit">➔</button>
     </form>
 
@@ -88,19 +85,17 @@
 
         function init() {
             if (!API_KEY) {
-                let key = prompt("Entre ta clé API Groq :");
+                let key = prompt("Clé Groq :");
                 if (key) { localStorage.setItem("genesis_key", key); location.reload(); }
                 return;
             }
-
-            // Éveil de Genesis
+            // Phase d'éveil
             setEye("awake.gif", true);
-            
             setTimeout(() => {
                 setEye("still.png");
-                chatBox.innerText = "Je suis éveillé. Que désires-tu savoir ?";
+                chatBox.innerText = "Je t'écoute...";
                 inputArea.style.opacity = "1";
-            }, 1000); // Ajuste selon la durée de ton awake.gif
+            }, 1000); 
         }
 
         async function sendMessage() {
@@ -118,7 +113,7 @@
                     body: JSON.stringify({
                         model: "llama-3.1-8b-instant",
                         messages: [
-                            { role: "system", content: "Tu es Genesis, une entité divine et mystique. Réponds de façon courte et poétique. Tu DOIS impérativement commencer tes réponses par [Heureux] ou [Triste] selon ton humeur." },
+                            { role: "system", content: "Tu es Genesis, une entité divine. Réponds de façon courte et mystique. Commence impérativement par [Heureux] ou [Triste]." },
                             { role: "user", content: promptValue }
                         ]
                     })
@@ -127,11 +122,7 @@
                 const data = await response.json();
                 const text = data.choices[0].message.content;
                 
-                // Gestion de l'affichage du texte et des émotions
-                let emotion = "neutre";
-                if (text.includes("[Triste]")) emotion = "sad";
-                if (text.includes("[Heureux]")) emotion = "happy";
-
+                let emotion = text.includes("[Triste]") ? "sad" : text.includes("[Heureux]") ? "happy" : "neutre";
                 const cleanText = text.replace(/\[.*?\]/g, "").trim();
 
                 if (emotion === "sad") {
@@ -144,7 +135,7 @@
 
                 chatBox.innerText = cleanText;
 
-                // Retour au neutre après 7 secondes
+                // Retour au neutre automatique
                 setTimeout(() => {
                     if (emotion === "sad") {
                         setEye("sad/to_still.gif", true);
@@ -156,7 +147,7 @@
                 }, 7000);
 
             } catch (e) {
-                chatBox.innerText = "Le lien est rompu... Vérifie ta connexion.";
+                chatBox.innerText = "Le lien est rompu...";
             }
         }
     </script>
