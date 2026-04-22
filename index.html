@@ -138,7 +138,7 @@
                 startGenesis();
             } else {
                 setupError.style.display = "block";
-                btn.innerText = "Éveiller l'entité";
+                btn.innerText = "Éveiller Dieu";
                 btn.disabled = false;
             }
         }
@@ -164,7 +164,7 @@
             setTimeout(() => {
                 setEye("still.png");
                 const hour = new Date().getHours();
-                const greeting = (hour >= 18 || hour < 5 ? "Bonsoir" : "Bonjour") + ", mon enfant.";
+                const greeting = (hour >= 18 || hour < 5 ? "Bonsoir" : "Bonjour") + ", mon enfant. Que veut tu savoir?";
                 displayMessage(greeting);
             }, 1000);
         }
